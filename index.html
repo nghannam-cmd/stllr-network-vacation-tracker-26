@@ -971,7 +971,7 @@ function renderTeam(){
         <span>Left: <strong style="color:var(--text)">${getVacRemaining(emp.id)} vac</strong> \u00B7 <strong>${getSickRemaining(emp.id)} sick</strong></span>
         <span>${reqs.filter(r=>r.approved).length} approved</span>
       </div>
-      ${recent.length?`<div class="recent-reqs">${recent.map(r=>`<div class="recent-req-item"><span>${r.isHalf?'\u25D1':r.type==='vacation'?'\u25C8':'\u25BC'}${r.overflow?' \u21AA':''} ${formatDate(r.startDate)}${r.isHalf?' (\u00BD)':r.endDate!==r.startDate?' \u2013 '+formatDate(r.endDate):''}</span><span class="badge ${r.approved?'badge-approved':'badge-pending'}">${r.approved?'\u2713':'\u2026'}</span></div>`).join('')}</div>`:''}
+      ${recent.length?`<div class="recent-reqs">${recent.map(r=>`<div class="recent-req-item"><span>${r.isHalf?'\u25D1':r.type==='vacation'?'\u25C8':'\u25BC'}${r.overflow?' \u21AA':''} ${formatDate(r.startDate)}${r.isHalf?' (\u00BD)':r.endDate!==r.startDate?' \u2013 '+formatDate(r.endDate):''}</span><span class="badge" style="color:var(--muted2)">${r.days}d</span></div>`).join('')}</div>`:''}
     </div>`;
   }
   cont.innerHTML=html+'</div>';
@@ -1167,7 +1167,7 @@ function openDayDetail(ds){
       const emp=EMPLOYEES.find(e=>e.id===ev.empId);if(!emp)continue;
       const typeLabel=ev.isHalf?'Half Day':ev.type==='vacation'?'Vacation':'Sick';
       const icon=ev.isHalf?'\u25D1':ev.type==='vacation'?'\u25C8':'\u25BC';
-      html+=`<div class="day-drawer-row"><div class="day-drawer-row-icon">${emp.emoji}</div><div class="day-drawer-row-main"><div class="day-drawer-row-name">${emp.name} ${COUNTRY_ICONS[emp.country]||''}</div><div class="day-drawer-row-sub">${icon} ${typeLabel} \u00B7 ${ev.approved?'\u2713 Approved':'\u23F3 Pending'}</div></div>${ev.isHalf?'<span class="day-drawer-hol-type">\u00BD</span>':''}</div>`;
+      html+=`<div class="day-drawer-row"><div class="day-drawer-row-icon">${emp.emoji}</div><div class="day-drawer-row-main"><div class="day-drawer-row-name">${emp.name} ${COUNTRY_ICONS[emp.country]||''}</div><div class="day-drawer-row-sub">${icon} ${typeLabel}</div></div>${ev.isHalf?'<span class="day-drawer-hol-type">\u00BD</span>':''}</div>`;
     }
     html+='</div>';
   }
@@ -1197,10 +1197,9 @@ function renderBoard(){
       </div>
       <div class="req-badges">
         <span class="badge ${req.type==='vacation'?'badge-vac':'badge-sick'}">${req.isHalf?'\u25D1 Half':req.type==='vacation'?'\u25C8 Vacation':'\u25BC Sick'}</span>
-        <span class="badge ${req.approved?'badge-approved':'badge-pending'}">${req.approved?'\u2713 Approved':'\u23F3 Pending'}</span>
+        ${req.approved?`<span class="badge badge-approved">\u2713 Manager Approved</span>`:''}
       </div>
       <div class="req-actions">
-        <button class="action-btn approve" onclick="toggleApproval('${req.id}')">${req.approved?'Revoke':'Approve'}</button>
         <button class="action-btn del" onclick="deleteReq('${req.id}')">\u2715</button>
       </div>
     </div>`;
@@ -1233,31 +1232,6 @@ function showConfirm({icon='⚠️', title, body, warn='', confirmLabel='Confirm
   overlay.addEventListener('click',e=>{if(e.target===overlay)remove();});
 }
 
-async function toggleApproval(id){
-  const req=requests.find(r=>r.id===id);if(!req)return;
-  const emp=EMPLOYEES.find(e=>e.id===req.empId);
-  const action=req.approved?'Revoke':'Approve';
-  const typeLabel=req.isHalf?'Half Day':req.type==='vacation'?'Vacation':'Sick Leave';
-  const dr=req.startDate===req.endDate?formatDate(req.startDate):`${formatDate(req.startDate)} \u2013 ${formatDate(req.endDate)}`;
-
-  showConfirm({
-    icon: req.approved ? '↩️' : '✅',
-    title: `${action} Leave Request`,
-    body: `You are about to <strong>${action.toLowerCase()}</strong> <strong>${emp?.emoji||''} ${emp?.name||'?'}</strong>'s ${typeLabel} request<br>(${dr} &middot; ${req.days} day${req.days!==1?'s':''}).`,
-    warn: '⚠ Only proceed if you are this employee\u2019s manager or have authorization to manage leave requests.',
-    confirmLabel: `Yes, ${action}`,
-    cancelLabel: 'Cancel',
-    async onConfirm(){
-      req.approved=!req.approved;
-      await updateRequest(req.id,{approved:req.approved});
-      addLog(req.approved?'APPROVED':'REVOKED',`${emp?.emoji||''} ${emp?.name||'?'} \u2014 ${typeLabel}, ${req.days}d, ${formatDate(req.startDate)}${req.endDate!==req.startDate?' \u2013 '+formatDate(req.endDate):''}`);
-      _lastSyncHash=hashData(requests)+'||'+hashData(activityLog);
-      toast(`${req.approved?'Approved':'Revoked'}: ${emp?.name}`,'info');
-      renderBoard();renderTeam();
-    }
-  });
-}
-
 async function deleteReq(id){
   const req=requests.find(r=>r.id===id);
   const emp=EMPLOYEES.find(e=>e.id===req?.empId);
@@ -1268,7 +1242,6 @@ async function deleteReq(id){
     icon: '🗑️',
     title: 'Delete Request',
     body: `Permanently delete <strong>${emp?.emoji||''} ${emp?.name||'?'}</strong>'s ${typeLabel} request<br>(${dr} &middot; ${req?.days||0} day${req?.days!==1?'s':''})?<br><br>This cannot be undone.`,
-    warn: '⚠ Only proceed if you are this employee\u2019s manager or have authorization to manage leave records.',
     confirmLabel: 'Yes, Delete',
     cancelLabel: 'Cancel',
     danger: true,
