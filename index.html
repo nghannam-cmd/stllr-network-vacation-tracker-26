@@ -474,6 +474,7 @@ const MONTH_NAMES=['January','February','March','April','May','June','July','Aug
 const EMPLOYEES=[
   {id:'omar',    name:'OK', country:'EG', emoji:'🎬'},
   {id:'maged',   name:'MM', country:'EG', emoji:'✍️'},
+  {id:'badr',    name:'BS', country:'EG', emoji:'🐱‍👤'},
   {id:'hazem',   name:'HM', country:'EG', emoji:'📡',  partTime:true},
   {id:'ahmed_y', name:'AY', country:'EG', emoji:'🎯'},
   {id:'habiba',  name:'HG', country:'EG', emoji:'🪄'},
@@ -545,7 +546,7 @@ const HOLIDAYS_2026={
 };
 
 // ─── CONFIGURATION ────────────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/a/macros/stllr.network/s/AKfycbzmu1KOR8z5EXAD6YaAZkEncLgljHa8QclYkPD5Ybu6D47JE1eBD3jvHldAVDMNvh3j/exec';
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxX15UOi-HgNujYjrE3UrN3zkxK-dTiajXKrlOlEpWwmjSBXzvFILU9Q4VYsoYRTSEk/exec";
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
@@ -568,6 +569,9 @@ const _useGAS = GAS_URL.trim().length > 0;
 async function gasRequest(action, payload={}){
   const res = await fetch(GAS_URL, {
     method:'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8', 
+    },
     body:JSON.stringify({action,...payload}),
   });
   if(!res.ok) throw new Error('GAS HTTP '+res.status);
